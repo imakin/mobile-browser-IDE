@@ -1,0 +1,33 @@
+#head{
+    font-size: 0;
+    input,button {
+        line-height: 30px;
+        font-size: 20px;
+        display: inline-block;
+        // width: 48%;
+        border: solid 1px gray;
+    }
+    margin-bottom: 20px;
+}
+#editor {
+    box-shadow: 0px 0px 6px 6px #efbf70;
+    padding: 2rem 1rem;
+    font-family: 'Oxygen Mono', monospace;
+    font-size: 16px !important;
+    line-height: 1.6em;
+    background-color: '#282c34';
+}
+
+.span-highlight-1 {
+    color: #e06c75;
+}
+.span-highlight-2 {
+    color: #61aff0;
+}
+.span-comment- {
+    color: rgb(180,180,180);
+    transition: color 0.5s;
+    &:hover{
+        color: rgb(105,0,0);
+    }
+}
