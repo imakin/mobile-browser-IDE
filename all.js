@@ -1,16 +1,16 @@
+HTMLCollection.prototype.forEach = Array.prototype.forEach;
+NodeList.prototype.forEach       = Array.prototype.forEach;
 Node.prototype.appendChildSr = function(el) {
-  this.appendChild(el);
-  return el;
+    this.appendChild(el);
+    return el;
 }
 var ready = function ready(fn) {
-  if (document.readyState != 'loading'){
-    fn();
-  } else {
-    document.addEventListener('DOMContentLoaded', fn);
-  }
+    if (document.readyState != 'loading'){
+        fn();
+    } else {
+        document.addEventListener('DOMContentLoaded', fn);
+    }
 }
-
-
 //querySelector shorthand
 function elem(selector) {
     return document.querySelector(selector);
@@ -18,19 +18,15 @@ function elem(selector) {
 function elems(selector) {
     return document.querySelectorAll(selector);
 }
-
-function unwrap(selector){
-    var b = elems(selector);
-
-    while(b.length) {
-        var parent = b[ 0 ].parentNode;
-        while( b[ 0 ].firstChild ) {
-            parent.insertBefore(  b[ 0 ].firstChild, b[ 0 ] );
-        }
-        parent.removeChild( b[ 0 ] );
+function unwrap(nodelist_or_selector) {
+    var nodelist = nodelist_or_selector;
+    if (typeof(nodelist_or_selector)==='string') {
+        nodelist = document.querySelectorAll(nodelist_or_selector);
     }
+    nodelist.forEach(function(item,i){
+        item.outerHTML = item.innerHTML; // or item.innerText if you want to remove all inner html tags
+    })
 }
-
 function downloadString(filename, data) {
     var blob = new Blob([data], {type: 'text/javascript'});
     if(window.navigator.msSaveOrOpenBlob) {
@@ -55,11 +51,9 @@ function uploadText() {
         const uploader = document.createElement('input')
         uploader.type = 'file'
         uploader.style.display = 'none'
-
         // listen for files
         uploader.addEventListener('change', function() {
             const files = uploader.files
-
             if (files.length) {
                 const reader = new FileReader()
                 reader.addEventListener('load', function() {
@@ -74,19 +68,16 @@ function uploadText() {
                 reader.readAsText(files[0])
             }
         })
-
         // trigger input
         document.body.appendChild(uploader)
         uploader.click()
     });
 }
-
 function cursor_position() {
     var sel = document.getSelection();
     sel.modify("extend", "backward", "paragraphboundary");
     var pos = sel.toString().length;
     if(sel.anchorNode != undefined) sel.collapseToEnd();
-
     return pos;
 }
 function write(text) {
@@ -102,7 +93,6 @@ function write(text) {
         document.selection.createRange().text = text;
     }
 }
-
 function get_language() {
     try {
         var splitted = elem('#filename').value.split('.');
@@ -112,15 +102,30 @@ function get_language() {
     }
 }
 var marker;//instantiated in ready()
-
-function highlight(){
+//get current Line in cursor, the firstChild of #editor that serve each line block
+function editorGetLineNode() {
+    var sel = document.getSelection();
+    var node = sel.focusNode;
+    var parent = node.parentNode;
+    while (parent.id!=='editor') {
+        node = parent;
+        parent = node.parentNode;
+    }
+    return node;
+}
+// highlight code keywords
+function highlight(line_node){
     var lang = languages[get_language()];
     if (lang===undefined) {
         return false;
     }
     //reset marking
-    var editor = elem('#editor');
+    // var editor = elem('#editor');
     // editor.innerHTML = editor.innerHTML.replace(/\<\/?span.*\>/g, '');
+    var node = line_node;
+    if (!line_node) node = editorGetLineNode();
+    unwrap(node.querySelectorAll('span'));
+    var marker = new Mark(node);
     marker.markRegExp(lang.comment.oneline, {
         'element': 'span',
         'className': 'span-comment-'
@@ -141,22 +146,18 @@ function highlight(){
             'limiters': settings.mark_limiter
         }
     });
-
-    var sel = document.getSelection();
-    var node = sel.focusNode;
-    var parent = node.parentNode;
-    while (parent.id!=='editor') {
-        node = parent;
-        parent = node.parentNode;
-    }
+}
+//auto indent on new line
+function indent(add_newline){
+    var node = editorGetLineNode();
     //add enter because e.preventDefault called on Enter key listener
-    document.execCommand('insertText', false, '\n');
-
+    if (add_newline) {
+        document.execCommand('insertText', false, '\n');
+    }
     try {
         console.log(node.innerText)
         var indent = node.innerText.match(/^[\s\t]+/);
         if (indent && indent[0]!=='\n'){
-
             console.log('auto indent '+indent[0].length);
             // node.innerHTML += '<br/>'
             for (var i=0;i<indent[0].length;i++) {
@@ -166,13 +167,10 @@ function highlight(){
     } catch(e){throw e;}
     return;
 }
-
-
 function save(){
     var data = document.querySelector('#editor').innerText;
     // data = data.replace(/\r\n/g, '\n');//make sure whitespace is using correct charracter
     // /[^\S\r\n]/
-
     data = data.replace(/[^\S\r\n]/g, ' ');//make sure whitespace is using correct charracter
     downloadString(document.getElementById('filename').value, data);
 }
@@ -185,17 +183,16 @@ function open(){
         editor.innerText = text;//.replace(/\s/g, '&nbsp;');
         text = editor.innerHTML.split(/<br\s*\/?>/).join('</div><div>');
         editor.innerHTML = text.replace(/\s/g, '&nbsp;');
-        highlight();
+        editor.children.forEach(function(line,i){
+            highlight(line);
+        });
     });
 }
-
-
 ready(function(){
-    marker = new Mark(elem('#editor'));
+    // marker = new Mark(elem('#editor'));
     //events binding
     document.addEventListener("keydown", function(e) {
         var ctrl = (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey);
-
         for (var run_once=0;run_once==0;run_once++) {
             if (ctrl && e.key == 's') {
                 save();
@@ -209,19 +206,17 @@ ready(function(){
             e.preventDefault();
         }
     }, false);
-
     elem('#editor').addEventListener('keydown', function(e){
         if (e.key == 'Enter') {
             highlight();
+            indent(true);
             e.preventDefault();
         }
     }, false)
-
     elem('#button_open').addEventListener('click', function(ev){
         open();
     });
     elem('#button_save').addEventListener('click', function(ev){
         save();
     });
-
 });

@@ -78,7 +78,7 @@ var languages = {
             ]
         },
         "comment":{
-            'oneline': /\/\/[.\s]*.*/,
+            'oneline': /^(?!.*\:\/\/.*$).*\/\/.*$/, //comment without leading :// to avoid https:// etc
             'multiline_open': ['/*', '<!--'],
             'multiline_close': ['*/', '-->']
         }
