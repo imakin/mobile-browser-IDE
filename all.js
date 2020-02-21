@@ -170,7 +170,10 @@ function highlight(){
 
 function save(){
     var data = document.querySelector('#editor').innerText;
-    data = data.replace(/\s/g, ' ');//make sure whitespace is using correct charracter
+    // data = data.replace(/\r\n/g, '\n');//make sure whitespace is using correct charracter
+    // /[^\S\r\n]/
+
+    data = data.replace(/[^\S\r\n]/g, ' ');//make sure whitespace is using correct charracter
     downloadString(document.getElementById('filename').value, data);
 }
 function open(){
