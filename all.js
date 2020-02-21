@@ -19,8 +19,20 @@ function elems(selector) {
     return document.querySelectorAll(selector);
 }
 
-var downloadString = function downloadString(filename, data) {
-    var blob = new Blob([data], {type: 'text/plain'});
+function unwrap(selector){
+    var b = elems(selector);
+
+    while(b.length) {
+        var parent = b[ 0 ].parentNode;
+        while( b[ 0 ].firstChild ) {
+            parent.insertBefore(  b[ 0 ].firstChild, b[ 0 ] );
+        }
+        parent.removeChild( b[ 0 ] );
+    }
+}
+
+function downloadString(filename, data) {
+    var blob = new Blob([data], {type: 'text/javascript'});
     if(window.navigator.msSaveOrOpenBlob) {
         window.navigator.msSaveBlob(blob, filename);
     }
@@ -157,7 +169,9 @@ function highlight(){
 
 
 function save(){
-    downloadString(document.getElementById('filename').value, document.querySelector('#editor').innerText);
+    var data = document.querySelector('#editor').innerText;
+    data = data.replace(/\s/g, ' ');//make sure whitespace is using correct charracter
+    downloadString(document.getElementById('filename').value, data);
 }
 function open(){
     var editor = elem('#editor');
